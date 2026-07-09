@@ -221,8 +221,8 @@ def run_tests():
         # 所有占位路由
         for path, method, expected_code in [
             ("/api/auth/status", "GET", 200),
-            ("/api/auth/email/send", "POST", 501),
-            ("/api/auth/email/verify", "POST", 501),
+            ("/api/auth/email/send", "POST", 400),   # 已实现，缺参数返回 400
+            ("/api/auth/email/verify", "POST", 400),  # 已实现，缺参数返回 400
             ("/api/auth/gitee", "GET", 501),
             ("/api/auth/gitee/callback", "GET", 501),
             ("/api/auth/logout", "POST", 200),

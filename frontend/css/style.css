@@ -1,0 +1,21 @@
+/* style.css — 共享样式 */
+
+/* Alpine.js 未加载时隐藏 [x-cloak] 元素 */
+[x-cloak] { display: none !important; }
+
+/* 工具卡片悬浮动画 */
+.tool-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #111827;
+    color: #f3f4f6;
+  }
+}

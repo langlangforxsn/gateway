@@ -1,16 +1,174 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" x-data="app()" :class="{ 'dark': dark }">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>叮当猫的口袋</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>叮当猫的口袋 — 免费在线工具集合</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' },
+          }
+        }
+      }
+    }
+  </script>
+  <script src="/js/auth.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    @keyframes fade-up { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+    .card-animate { opacity:0; animation:fade-up 0.5s ease-out forwards; }
+    .card-animate:nth-child(2) { animation-delay:0.1s; }
+    .card-animate:nth-child(3) { animation-delay:0.2s; }
+    .card-animate:nth-child(4) { animation-delay:0.2s; }
+    .tool-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .tool-card:hover { transform:translateY(-6px); box-shadow:0 20px 40px -12px rgba(59,130,246,0.25); }
+    .tool-card:hover .card-icon { transform:scale(1.1) rotate(-3deg); }
+    .card-icon { transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes pulse-soft { 0%,100%{opacity:0.5} 50%{opacity:1} }
+    .pulse-soft { animation:pulse-soft 3s ease-in-out infinite; }
+    .dot-grid { background-image:radial-gradient(circle,rgba(59,130,246,0.15) 1px,transparent 1px); background-size:32px 32px; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center">
-    <div class="text-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">🐱 叮当猫的口袋</h1>
-        <p class="text-gray-500">Gateway 正在搭建中...</p>
-        <a href="/health" class="mt-4 inline-block text-blue-500 hover:underline">检查服务状态</a>
+
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 overflow-x-hidden">
+
+  <!-- 登录弹窗 -->
+  <div x-html="getLoginModalHTML()"></div>
+
+  <!-- ============================================================ -->
+  <!--  导航栏                                                        -->
+  <!-- ============================================================ -->
+  <nav class="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-lg font-bold text-brand-600">
+        <span class="text-2xl">🐱</span> 叮当猫的口袋
+      </a>
+      <div class="flex items-center gap-3">
+        <button @click="dark = !dark" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <span x-show="!dark" class="text-lg">🌙</span>
+          <span x-show="dark" class="text-lg">☀️</span>
+        </button>
+        <div x-data x-html="getNavUserHTML()"></div>
+      </div>
     </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!--  Hero                                                          -->
+  <!-- ============================================================ -->
+  <header class="relative overflow-hidden bg-gradient-to-br from-brand-600 via-blue-500 to-indigo-600 pt-14">
+    <div class="absolute inset-0 dot-grid opacity-40"></div>
+    <div class="relative max-w-6xl mx-auto px-4 py-20 text-center">
+      <div class="text-6xl mb-6">🐱</div>
+      <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">叮当猫的口袋</h1>
+      <p class="text-xl text-blue-100 max-w-2xl mx-auto mb-6">
+        免费 · 安全 · 即开即用的在线工具集合
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <span class="px-4 py-1.5 bg-white/20 text-white rounded-full text-sm backdrop-blur-sm">✨ 完全免费</span>
+        <span class="px-4 py-1.5 bg-white/20 text-white rounded-full text-sm backdrop-blur-sm">🔒 隐私安全</span>
+        <span class="px-4 py-1.5 bg-white/20 text-white rounded-full text-sm backdrop-blur-sm">📱 移动适配</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!--  工具卡片                                                      -->
+  <!-- ============================================================ -->
+  <main class="max-w-6xl mx-auto px-4 py-16">
+    <h2 class="text-2xl font-bold text-center mb-2">🧰 精选工具</h2>
+    <p class="text-gray-500 text-center mb-10">选择你需要的工具，无需注册即可体验</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- PDF 工具 -->
+      <a href="/proxy/pdf/index.html" class="card-animate tool-card block bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="card-icon text-4xl mb-4">📄</div>
+        <h3 class="text-lg font-bold mb-2">PDF 工具箱</h3>
+        <p class="text-sm text-gray-500 mb-4">合并、分割、压缩、加密、转图片... 13 种 PDF 处理功能</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">合并</span>
+          <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">压缩</span>
+          <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">转图片</span>
+          <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">加水印</span>
+        </div>
+      </a>
+
+      <!-- 图片转换 -->
+      <a href="/proxy/img/" class="card-animate tool-card block bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="card-icon text-4xl mb-4">🖼️</div>
+        <h3 class="text-lg font-bold mb-2">图片格式转换</h3>
+        <p class="text-sm text-gray-500 mb-4">支持 PNG、JPEG、WebP、HEIC、SVG 等 8 种格式互转</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">PNG</span>
+          <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">WebP</span>
+          <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">HEIC</span>
+          <span class="px-2 py-0.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">SVG</span>
+        </div>
+      </a>
+
+      <!-- 随机数生成器 -->
+      <a href="https://random-generatorforxsn-leo4vttk4v9vjetxx973zm.streamlit.app" target="_blank"
+         class="card-animate tool-card block bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="card-icon text-4xl mb-4">🎲</div>
+        <h3 class="text-lg font-bold mb-2">随机数生成器</h3>
+        <p class="text-sm text-gray-500 mb-4">支持多种分布模式、趋势控制、Excel 导出</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs rounded-full">均匀分布</span>
+          <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs rounded-full">正态分布</span>
+          <span class="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs rounded-full">导出 Excel</span>
+        </div>
+      </a>
+
+      <!-- Coming Soon -->
+      <div class="card-animate tool-card block bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm opacity-60">
+        <div class="card-icon text-4xl mb-4">🔮</div>
+        <h3 class="text-lg font-bold mb-2">更多工具 <span class="pulse-soft text-sm text-brand-500 font-normal">即将上线</span></h3>
+        <p class="text-sm text-gray-500">我们正在开发更多实用工具，敬请期待...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================ -->
+  <!--  底部提示                                                      -->
+  <!-- ============================================================ -->
+  <section class="bg-brand-50 dark:bg-gray-800/50 border-t border-brand-100 dark:border-gray-700">
+    <div class="max-w-6xl mx-auto px-4 py-12 text-center">
+      <h3 class="text-lg font-bold mb-3">💡 未登录也能用</h3>
+      <p class="text-gray-600 dark:text-gray-400 mb-4 max-w-lg mx-auto">
+        所有工具无需注册即可体验，每日 3 次免费使用。登录后解锁无限使用 + 个人中心。
+      </p>
+      <button @click="openLoginModal()"
+              class="px-6 py-2.5 bg-brand-500 text-white rounded-lg font-medium hover:bg-brand-600 transition">
+        立即登录
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!--  Footer                                                        -->
+  <!-- ============================================================ -->
+  <footer class="text-center py-8 text-sm text-gray-400">
+    <p>🐱 叮当猫的口袋 — 免费在线工具集合</p>
+    <p class="mt-1">Made with ❤️</p>
+  </footer>
+
+  <!-- App 逻辑 -->
+  <script>
+    function app() {
+      return {
+        dark: localStorage.getItem('dark') === 'true',
+        init() {
+          this.$watch('dark', v => localStorage.setItem('dark', v));
+        }
+      };
+    }
+  </script>
+
 </body>
 </html>
