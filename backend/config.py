@@ -27,9 +27,9 @@ class Config:
     # ---- 管理员 ----
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 
-    # ---- 邮箱 SMTP ----
-    SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.qq.com")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+    # ---- QQ SMTP ----
+    SMTP_HOST = os.environ.get("SMTP_HOST") or "smtp.qq.com"
+    SMTP_PORT = int(os.environ.get("SMTP_PORT") or "587")  # QQ 也支持 587 STARTTLS
     SMTP_USER = os.environ.get("SMTP_USER", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM = os.environ.get("SMTP_FROM", "叮当猫的口袋")
