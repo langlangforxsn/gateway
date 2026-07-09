@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: gateway
+    runtime: docker
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: SMTP_HOST
+        value: "smtp.qq.com"
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        value: "叮当猫的口袋"
+      - key: PDF_TOOL_API
+        value: "https://pdf-tool-api.onrender.com"
+      - key: IMAGE_CONVERTER_API
+        value: "https://image-converter.onrender.com"
