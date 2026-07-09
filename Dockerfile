@@ -10,5 +10,8 @@ COPY frontend/ ./frontend/
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+ENV PORT=10000
 
-CMD ["python", "app.py"]
+EXPOSE ${PORT}
+
+CMD exec gunicorn --bind "0.0.0.0:${PORT}" --timeout 120 --log-level debug app:app
