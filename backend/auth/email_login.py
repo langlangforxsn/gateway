@@ -72,19 +72,11 @@ def check_ip_rate_limit():
 
 def send_verification_email(email, code):
     """
-    通过 SMTP 发送验证码邮件。
+    发送验证码邮件 — 优先用 Resend API，失败回退到 SMTP。
     返回 (success: bool, error_message: str)
     """
-    if not Config.SMTP_USER or not Config.SMTP_PASSWORD:
-        return False, "邮件服务未配置"
-
     email_lower = email.lower().strip()
-
-    # 构建邮件
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"【叮当猫的口袋】验证码：{code}"
-    msg["From"] = Config.SMTP_USER  # QQ SMTP 要求 From 必须是发件邮箱
-    msg["To"] = email_lower
+    subject = f"【叮当猫的口袋】验证码：{code}"
 
     # HTML 正文
     html = render_template(
@@ -92,23 +84,53 @@ def send_verification_email(email, code):
         code=code,
         expire_minutes=Config.EMAIL_CODE_EXPIRE_MINUTES,
     )
-    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    # 发送
-    try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, context=context, timeout=10) as server:
-            server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-            server.sendmail(Config.SMTP_USER, email_lower, msg.as_string())
-        return True, ""
-    except smtplib.SMTPAuthenticationError:
-        return False, "邮箱认证失败，请检查 SMTP_USER 和 SMTP_PASSWORD 配置"
-    except smtplib.SMTPConnectError:
-        return False, f"无法连接 {Config.SMTP_HOST}:{Config.SMTP_PORT}，请检查 SMTP_HOST/SMTP_PORT 配置"
-    except OSError as e:
-        return False, f"网络错误: {str(e)[:80]}"
-    except Exception as e:
-        return False, f"发送失败({type(e).__name__})"
+    # 方式 1: Resend API (推荐，Render 可用)
+    if Config.RESEND_API_KEY:
+        import requests
+        try:
+            resp = requests.post(
+                "https://api.resend.com/emails",
+                json={
+                    "from": f"叮当猫的口袋 <noreply@resend.dev>",
+                    "to": [email_lower],
+                    "subject": subject,
+                    "html": html,
+                },
+                headers={
+                    "Authorization": f"Bearer {Config.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                timeout=15,
+            )
+            if resp.status_code in (200, 201):
+                return True, ""
+            return False, f"Resend 发送失败: {resp.json().get('message', resp.text)[:80]}"
+        except Exception as e:
+            return False, f"Resend 请求失败: {type(e).__name__}"
+
+    # 方式 2: SMTP (本地开发)
+    if Config.SMTP_USER and Config.SMTP_PASSWORD:
+        import smtplib, ssl
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = Config.SMTP_USER
+        msg["To"] = email_lower
+        msg.attach(MIMEText(html, "html", "utf-8"))
+
+        try:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, context=context, timeout=10) as server:
+                server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+                server.sendmail(Config.SMTP_USER, email_lower, msg.as_string())
+            return True, ""
+        except Exception as e:
+            return False, f"SMTP 发送失败({type(e).__name__})"
+
+    return False, "邮件服务未配置"
 
 
 def create_and_send_code(email):

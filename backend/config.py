@@ -27,9 +27,12 @@ class Config:
     # ---- 管理员 ----
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 
-    # ---- QQ SMTP ----
-    SMTP_HOST = os.environ.get("SMTP_HOST") or "smtp.qq.com"
-    SMTP_PORT = int(os.environ.get("SMTP_PORT") or "587")  # QQ 也支持 587 STARTTLS
+    # ---- 邮件 ----
+    # Resend API（推荐，Render 可用）
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+    # SMTP（本地开发用，Render 免费层无法直连）
+    SMTP_HOST = os.environ.get("SMTP_HOST", "")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
     SMTP_USER = os.environ.get("SMTP_USER", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM = os.environ.get("SMTP_FROM", "叮当猫的口袋")
