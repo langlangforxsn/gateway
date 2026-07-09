@@ -21,19 +21,21 @@ def email_send():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
 
-    # 验证邮箱格式
     if not email:
         return jsonify({"error": "请输入邮箱地址"}), 400
     if not EMAIL_REGEX.match(email):
         return jsonify({"error": "邮箱格式不正确"}), 400
 
-    from auth.email_login import create_and_send_code
-    success, message = create_and_send_code(email)
-
-    if success:
-        return jsonify({"message": message})
-    else:
-        return jsonify({"error": message}), 429
+    try:
+        from auth.email_login import create_and_send_code
+        success, message = create_and_send_code(email)
+        if success:
+            return jsonify({"message": message})
+        else:
+            return jsonify({"error": message}), 429
+    except Exception as e:
+        import traceback
+        return jsonify({"error": f"服务器内部错误: {str(e)}"}), 500
 
 
 @bp.route("/email/verify", methods=["POST"])

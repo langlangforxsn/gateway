@@ -102,16 +102,13 @@ def send_verification_email(email, code):
             server.sendmail(Config.SMTP_USER, email_lower, msg.as_string())
         return True, ""
     except smtplib.SMTPAuthenticationError:
-        return False, "邮件服务认证失败，请联系管理员"
-    except smtplib.SMTPRecipientsRefused:
-        return False, "邮箱地址无效"
-    except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, OSError) as e:
-        return False, f"无法连接邮件服务器，请稍后重试"
+        return False, "邮箱认证失败，请检查 SMTP_USER 和 SMTP_PASSWORD 配置"
+    except smtplib.SMTPConnectError:
+        return False, f"无法连接 {Config.SMTP_HOST}:{Config.SMTP_PORT}，请检查 SMTP_HOST/SMTP_PORT 配置"
+    except OSError as e:
+        return False, f"网络错误: {str(e)[:80]}"
     except Exception as e:
-        from config import Config
-        import traceback
-        # 开发模式显示详细错误
-        return False, f"邮件发送失败：{type(e).__name__}"
+        return False, f"发送失败({type(e).__name__})"
 
 
 def create_and_send_code(email):
