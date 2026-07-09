@@ -28,6 +28,11 @@ def create_app():
         # Docker 环境：frontend 在同级
         frontend_dir = os.path.join(base_dir, "frontend")
 
+    logger.info(f"base_dir: {base_dir}")
+    logger.info(f"frontend_dir: {frontend_dir}")
+    logger.info(f"frontend exists: {os.path.isdir(frontend_dir)}")
+    logger.info(f"sys.path: {sys.path[:3]}")
+
     app = Flask(
         __name__,
         static_folder=frontend_dir,
