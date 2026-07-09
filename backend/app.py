@@ -14,9 +14,16 @@ from database import db, init_db
 
 
 def create_app():
+    # 前端目录：Docker 中是 /app/frontend，本地是 ../frontend
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    frontend_dir = os.path.join(base_dir, "..", "frontend")
+    if not os.path.isdir(frontend_dir):
+        # Docker 环境：frontend 在同级
+        frontend_dir = os.path.join(base_dir, "frontend")
+
     app = Flask(
         __name__,
-        static_folder="../frontend",
+        static_folder=frontend_dir,
         static_url_path="",
     )
     app.config.from_object(Config)
