@@ -4,6 +4,16 @@ Gateway 配置管理
 """
 import os
 import secrets
+from pathlib import Path
+
+# 加载 .env 文件（开发环境）
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass
 
 
 class Config:

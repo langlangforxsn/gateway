@@ -83,7 +83,7 @@ def send_verification_email(email, code):
     # 构建邮件
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"【叮当猫的口袋】验证码：{code}"
-    msg["From"] = f"{Config.SMTP_FROM} <{Config.SMTP_USER}>"
+    msg["From"] = Config.SMTP_USER  # QQ SMTP 要求 From 必须是发件邮箱
     msg["To"] = email_lower
 
     # HTML 正文
