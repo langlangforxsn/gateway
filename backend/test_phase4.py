@@ -22,6 +22,11 @@ def run_tests():
         UsageLog.query.delete()
         EmailCode.query.delete()
         User.query.delete()
+        # 重置 limit_configs
+        LimitConfig.query.delete()
+        from config import Config
+        for cfg in Config.DEFAULT_LIMITS:
+            db.session.add(LimitConfig(**cfg))
         db.session.commit()
 
         # 创建测试用户并登录

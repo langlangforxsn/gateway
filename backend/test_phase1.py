@@ -56,6 +56,11 @@ def run_tests():
         EmailCode.query.delete()
         User.query.delete()
         # 不清理 LimitConfig（系统配置）
+        # 重置 limit_configs 为默认值（防止前一个测试污染）
+        LimitConfig.query.delete()
+        from config import Config
+        for cfg in Config.DEFAULT_LIMITS:
+            db.session.add(LimitConfig(**cfg))
         db.session.commit()
 
         passed = 0
@@ -229,11 +234,11 @@ def run_tests():
             ("/api/user/profile", "GET", 401),   # 已实现，未登录返回 401
             ("/api/user/usage", "GET", 401),     # 已实现，未登录返回 401
             ("/api/user/stats", "GET", 401),     # 已实现，未登录返回 401
-            ("/api/admin/users", "GET", 501),
-            ("/api/admin/stats", "GET", 501),
-            ("/api/admin/stats/trend", "GET", 501),
-            ("/api/admin/limits", "GET", 501),
-            ("/api/admin/usage", "GET", 501),
+            ("/api/admin/users", "GET", 401),      # 已实现，未登录返回 401
+            ("/api/admin/stats", "GET", 401),      # 已实现，未登录返回 401
+            ("/api/admin/stats/trend", "GET", 401), # 已实现，未登录返回 401
+            ("/api/admin/limits", "GET", 401),     # 已实现，未登录返回 401
+            ("/api/admin/usage", "GET", 401),      # 已实现，未登录返回 401
             ("/proxy/pdf/test", "GET", 503),  # 后端未配置返回 503
             ("/proxy/img/test", "GET", 503),
             ("/health", "GET", 200),
@@ -249,7 +254,7 @@ def run_tests():
         assert_eq("GET /personal.html → 200", resp.status_code, 200)  # 已实现
 
         resp = client.get("/admin.html")
-        assert_eq("GET /admin.html → 404 (not yet)", resp.status_code, 404)
+        assert_eq("GET /admin.html → 200", resp.status_code, 200)  # 已实现
 
         # ==========================================
         # 清理

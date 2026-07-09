@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN" x-data="adminApp()" :class="{ 'dark': dark }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 — 叮当猫的口袋</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="/js/auth.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>[x-cloak]{display:none!important}</style>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+  <div x-html="getLoginModalHTML()"></div>
+
+  <!-- 导航栏 -->
+  <nav class="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-lg font-bold text-indigo-600"><span class="text-2xl">🐱</span> 管理后台</a>
+      <div class="flex items-center gap-3">
+        <a href="/" class="text-sm text-gray-500 hover:text-indigo-600">← 返回首页</a>
+        <button @click="dark=!dark" class="p-2 rounded-lg hover:bg-gray-100"><span x-show="!dark">🌙</span><span x-show="dark">☀️</span></button>
+        <div x-data x-html="getNavUserHTML()"></div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-20 pb-16 max-w-7xl mx-auto px-4">
+
+    <!-- 未登录/非管理员 -->
+    <div x-show="!AuthState.user && !loading" x-cloak class="text-center py-20">
+      <div class="text-6xl mb-4">🔒</div>
+      <h2 class="text-xl font-bold mb-2">请先登录</h2>
+      <button @click="openLoginModal()" class="px-6 py-2.5 bg-indigo-500 text-white rounded-lg">立即登录</button>
+    </div>
+    <div x-show="AuthState.user && !AuthState.user.is_admin && !loading" x-cloak class="text-center py-20">
+      <div class="text-6xl mb-4">⛔</div>
+      <h2 class="text-xl font-bold">需要管理员权限</h2>
+    </div>
+    <div x-show="loading" x-cloak class="text-center py-20"><div class="animate-spin text-4xl">⏳</div></div>
+
+    <!-- 管理员内容 -->
+    <div x-show="AuthState.user?.is_admin && !loading" x-cloak>
+
+      <!-- 数据概览 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border">
+          <div class="text-sm text-gray-500 mb-1">总用户数</div>
+          <div class="text-3xl font-bold text-indigo-600" x-text="overview.total_users"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border">
+          <div class="text-sm text-gray-500 mb-1">今日新增</div>
+          <div class="text-3xl font-bold text-green-600" x-text="overview.today_new"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border">
+          <div class="text-sm text-gray-500 mb-1">今日登录</div>
+          <div class="text-3xl font-bold text-blue-600" x-text="overview.today_login"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-5 border">
+          <div class="text-sm text-gray-500 mb-1">今日使用</div>
+          <div class="text-3xl font-bold text-amber-600" x-text="overview.today_usage"></div>
+        </div>
+      </div>
+
+      <!-- 趋势图表 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border">
+          <h3 class="font-bold mb-3">📈 注册趋势（近 30 天）</h3>
+          <div id="chart-register" style="height:260px"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border">
+          <h3 class="font-bold mb-3">📊 使用量趋势（近 30 天）</h3>
+          <div id="chart-usage-trend" style="height:260px"></div>
+        </div>
+      </div>
+
+      <!-- 用户列表 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold">👥 用户列表</h3>
+          <div class="flex gap-2">
+            <input x-model="userSearch" @keyup.enter="loadUsers(1)" placeholder="搜索昵称/邮箱"
+                   class="px-3 py-1.5 text-sm border rounded-lg w-48">
+            <button @click="loadUsers(1)" class="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg">搜索</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-4">序号</th><th class="py-2 pr-4">昵称</th><th class="py-2 pr-4">邮箱</th>
+              <th class="py-2 pr-4">方式</th><th class="py-2 pr-4">使用次数</th><th class="py-2 pr-4">注册时间</th><th class="py-2">最后登录</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="u in users" :key="u.id">
+                <tr class="border-b border-gray-50 dark:border-gray-700">
+                  <td class="py-2 pr-4 font-mono text-xs" x-text="'#'+String(u.user_no).padStart(5,'0')"></td>
+                  <td class="py-2 pr-4"><span x-text="u.nickname"></span> <span x-show="u.is_admin" class="text-xs text-amber-500">管理员</span></td>
+                  <td class="py-2 pr-4 text-gray-500" x-text="u.email||'-'"></td>
+                  <td class="py-2 pr-4"><span class="px-1.5 py-0.5 text-xs rounded" :class="u.auth_type==='email'?'bg-blue-50 text-blue-600':'bg-orange-50 text-orange-600'" x-text="u.auth_type"></span></td>
+                  <td class="py-2 pr-4" x-text="u.usage_count"></td>
+                  <td class="py-2 pr-4 text-gray-400 text-xs" x-text="u.created_at"></td>
+                  <td class="py-2 text-gray-400 text-xs" x-text="u.last_login||'-'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <div x-show="userPages>1" class="flex justify-center gap-2 mt-4 pt-3 border-t">
+          <button @click="loadUsers(userPage-1)" :disabled="userPage<=1" class="px-3 py-1 text-sm border rounded disabled:opacity-40">上一页</button>
+          <span class="px-3 py-1 text-sm text-gray-500" x-text="userPage+'/'+userPages"></span>
+          <button @click="loadUsers(userPage+1)" :disabled="userPage>=userPages" class="px-3 py-1 text-sm border rounded disabled:opacity-40">下一页</button>
+        </div>
+      </div>
+
+      <!-- 限制配置 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold">⚙️ 限制配置</h3>
+          <button @click="saveLimits()" :disabled="savingLimits"
+                  class="px-4 py-1.5 text-sm bg-indigo-500 text-white rounded-lg disabled:opacity-50">
+            <span x-show="!savingLimits">保存修改</span><span x-show="savingLimits">保存中...</span>
+          </button>
+        </div>
+        <div x-show="limitsSaved" class="mb-3 text-sm text-green-600">✓ 已保存</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-3">工具</th><th class="py-2 pr-3 text-center">未登录/日</th>
+              <th class="py-2 pr-3 text-center">未登录文件MB</th><th class="py-2 pr-3 text-center">登录/日</th>
+              <th class="py-2 pr-3 text-center">登录文件MB</th><th class="py-2 pr-3 text-center">需登录</th><th class="py-2 text-center">启用</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="(cfg,i) in limits" :key="cfg.tool_name">
+                <tr class="border-b border-gray-50 dark:border-gray-700">
+                  <td class="py-2 pr-3 font-medium" x-text="cfg.tool_label"></td>
+                  <td class="py-2 pr-3 text-center"><input type="number" min="0" x-model.number="cfg.guest_daily" class="w-16 text-center border rounded px-1 py-0.5"></td>
+                  <td class="py-2 pr-3 text-center"><input type="number" min="0" x-model.number="cfg.guest_file_mb" class="w-16 text-center border rounded px-1 py-0.5"></td>
+                  <td class="py-2 pr-3 text-center"><input type="number" min="0" x-model.number="cfg.login_daily" class="w-16 text-center border rounded px-1 py-0.5"><div class="text-xs text-gray-400">0=无限制</div></td>
+                  <td class="py-2 pr-3 text-center"><input type="number" min="0" x-model.number="cfg.login_file_mb" class="w-16 text-center border rounded px-1 py-0.5"></td>
+                  <td class="py-2 pr-3 text-center"><input type="checkbox" x-model="cfg.require_login"></td>
+                  <td class="py-2 text-center"><input type="checkbox" x-model="cfg.enabled"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 全局使用记录 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border">
+        <h3 class="font-bold mb-4">📋 全局使用记录</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b text-left text-gray-500">
+              <th class="py-2 pr-3">用户</th><th class="py-2 pr-3">工具</th><th class="py-2 pr-3">IP</th><th class="py-2">时间</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="r in globalUsage" :key="r.id">
+                <tr class="border-b border-gray-50 dark:border-gray-700">
+                  <td class="py-2 pr-3" x-text="r.user_nickname"></td>
+                  <td class="py-2 pr-3" x-text="r.tool_name"></td>
+                  <td class="py-2 pr-3 text-gray-400 text-xs font-mono" x-text="r.ip_address"></td>
+                  <td class="py-2 text-gray-400 text-xs" x-text="r.created_at"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <div x-show="usagePages>1" class="flex justify-center gap-2 mt-4 pt-3 border-t">
+          <button @click="loadGlobalUsage(usagePage-1)" :disabled="usagePage<=1" class="px-3 py-1 text-sm border rounded disabled:opacity-40">上一页</button>
+          <span class="px-3 py-1 text-sm text-gray-500" x-text="usagePage+'/'+usagePages"></span>
+          <button @click="loadGlobalUsage(usagePage+1)" :disabled="usagePage>=usagePages" class="px-3 py-1 text-sm border rounded disabled:opacity-40">下一页</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function adminApp() {
+      return {
+        dark: localStorage.getItem("dark") === "true",
+        loading: true,
+        overview: { total_users: 0, today_new: 0, today_login: 0, today_usage: 0 },
+        users: [], userPage: 1, userPages: 1, userSearch: "",
+        limits: [], savingLimits: false, limitsSaved: false,
+        globalUsage: [], usagePage: 1, usagePages: 1,
+
+        async init() {
+          this.$watch("dark", v => localStorage.setItem("dark", v));
+          await checkAuthStatus();
+          if (!AuthState.user?.is_admin) { this.loading = false; return; }
+          await Promise.all([this.loadOverview(), this.loadTrend(), this.loadUsers(1), this.loadLimits(), this.loadGlobalUsage(1)]);
+          this.loading = false;
+        },
+
+        async loadOverview() {
+          const res = await fetch("/api/admin/stats"); if (res.ok) this.overview = await res.json();
+        },
+
+        async loadTrend() {
+          const res = await fetch("/api/admin/stats/trend?days=30");
+          if (!res.ok) return;
+          const d = await res.json();
+          this.$nextTick(() => {
+            this.renderLineChart("chart-register", d.dates, d.register_data, "注册数", "#10b981");
+            this.renderBarChart2("chart-usage-trend", d.dates, d.usage_data, "使用次数");
+          });
+        },
+
+        async loadUsers(page) {
+          const q = this.userSearch ? `&search=${encodeURIComponent(this.userSearch)}` : "";
+          const res = await fetch(`/api/admin/users?page=${page}&per_page=15${q}`);
+          if (res.ok) { const d = await res.json(); this.users = d.users; this.userPage = d.page; this.userPages = d.pages; }
+        },
+
+        async loadLimits() {
+          const res = await fetch("/api/admin/limits"); if (res.ok) { const d = await res.json(); this.limits = d.limits; }
+        },
+
+        async saveLimits() {
+          this.savingLimits = true; this.limitsSaved = false;
+          let ok = true;
+          for (const cfg of this.limits) {
+            const res = await fetch(`/api/admin/limits/${cfg.tool_name}`, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(cfg) });
+            if (!res.ok) ok = false;
+          }
+          this.savingLimits = false; this.limitsSaved = ok;
+          if (ok) setTimeout(() => this.limitsSaved = false, 3000);
+        },
+
+        async loadGlobalUsage(page) {
+          const res = await fetch(`/api/admin/usage?page=${page}&per_page=15`);
+          if (res.ok) { const d = await res.json(); this.globalUsage = d.records; this.usagePage = d.page; this.usagePages = d.pages; }
+        },
+
+        renderLineChart(elId, dates, data, name, color) {
+          const el = document.getElementById(elId); if (!el) return;
+          const chart = echarts.init(el);
+          chart.setOption({ tooltip:{trigger:"axis"}, grid:{left:"12%",right:"5%",top:"10%",bottom:"15%"}, xAxis:{type:"category",data:dates,axisLabel:{fontSize:10,rotate:45}}, yAxis:{type:"value",minInterval:1}, series:[{name,type:"line",data,smooth:true,symbol:"circle",symbolSize:6,lineStyle:{color,width:2},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:color+"33"},{offset:1,color:color+"05"}])},itemStyle:{color}}] });
+          window.addEventListener("resize",()=>chart.resize());
+        },
+
+        renderBarChart2(elId, dates, data, name) {
+          const el = document.getElementById(elId); if (!el) return;
+          const chart = echarts.init(el);
+          chart.setOption({ tooltip:{trigger:"axis"}, grid:{left:"12%",right:"5%",top:"10%",bottom:"15%"}, xAxis:{type:"category",data:dates,axisLabel:{fontSize:10,rotate:45}}, yAxis:{type:"value",minInterval:1}, series:[{name,type:"bar",data,barWidth:"60%",itemStyle:{borderRadius:[4,4,0,0],color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:"#6366f1"},{offset:1,color:"#a78bfa"}])}}] });
+          window.addEventListener("resize",()=>chart.resize());
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>

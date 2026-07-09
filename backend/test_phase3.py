@@ -69,6 +69,11 @@ def run_tests():
         # 创建测试用户
         user = User(user_no=100, auth_type="email", auth_id="proxy@test.com", nickname="ProxyUser")
         db.session.add(user)
+        # 重置 limit_configs 为默认值（防止前一个测试污染）
+        LimitConfig.query.delete()
+        from config import Config
+        for cfg in Config.DEFAULT_LIMITS:
+            db.session.add(LimitConfig(**cfg))
         db.session.commit()
 
         passed = 0

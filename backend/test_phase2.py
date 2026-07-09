@@ -24,6 +24,11 @@ def run_tests():
         UsageLog.query.delete()
         EmailCode.query.delete()
         User.query.delete()
+        # 重置 limit_configs 为默认值（防止前一个测试污染）
+        LimitConfig.query.delete()
+        from config import Config
+        for cfg in Config.DEFAULT_LIMITS:
+            db.session.add(LimitConfig(**cfg))
         db.session.commit()
 
         passed = 0
@@ -187,7 +192,7 @@ def run_tests():
 
         # 验证管理员后台可访问
         resp = client.get("/api/admin/users")
-        assert_eq("管理员访问后台", resp.status_code, 501)  # 501 因为还没实现
+        assert_eq("管理员访问后台", resp.status_code, 200)  # 已实现
 
         client.post("/api/auth/logout")
         app.config["ADMIN_EMAIL"] = ""
