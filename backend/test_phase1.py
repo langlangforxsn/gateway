@@ -234,8 +234,8 @@ def run_tests():
             ("/api/admin/stats/trend", "GET", 501),
             ("/api/admin/limits", "GET", 501),
             ("/api/admin/usage", "GET", 501),
-            ("/proxy/pdf/test", "GET", 501),
-            ("/proxy/img/test", "GET", 501),
+            ("/proxy/pdf/test", "GET", 503),  # 后端未配置返回 503
+            ("/proxy/img/test", "GET", 503),
             ("/health", "GET", 200),
         ]:
             resp = getattr(client, method.lower())(path)
