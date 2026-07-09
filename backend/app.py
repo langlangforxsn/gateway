@@ -4,6 +4,13 @@
 """
 import os
 import sys
+import logging
+
+# 确保当前目录在 Python 路径中
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
@@ -48,15 +55,20 @@ def create_app():
         return jsonify({"error": "请先登录", "code": "LOGIN_REQUIRED"}), 401
 
     # ---- 注册蓝图 ----
-    from auth import bp as auth_bp
-    from user import bp as user_bp
-    from admin import bp as admin_bp
-    from proxy import bp as proxy_bp
+    try:
+        from auth import bp as auth_bp
+        from user import bp as user_bp
+        from admin import bp as admin_bp
+        from proxy import bp as proxy_bp
 
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(proxy_bp)
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(user_bp)
+        app.register_blueprint(admin_bp)
+        app.register_blueprint(proxy_bp)
+        logger.info("所有蓝图注册成功")
+    except Exception as e:
+        logger.error(f"蓝图注册失败: {e}")
+        raise
 
     # ---- 前端页面路由 ----
     @app.route("/")
