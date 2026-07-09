@@ -226,9 +226,9 @@ def run_tests():
             ("/api/auth/gitee", "GET", 501),
             ("/api/auth/gitee/callback", "GET", 501),
             ("/api/auth/logout", "POST", 200),
-            ("/api/user/profile", "GET", 501),
-            ("/api/user/usage", "GET", 501),
-            ("/api/user/stats", "GET", 501),
+            ("/api/user/profile", "GET", 401),   # 已实现，未登录返回 401
+            ("/api/user/usage", "GET", 401),     # 已实现，未登录返回 401
+            ("/api/user/stats", "GET", 401),     # 已实现，未登录返回 401
             ("/api/admin/users", "GET", 501),
             ("/api/admin/stats", "GET", 501),
             ("/api/admin/stats/trend", "GET", 501),
@@ -246,7 +246,7 @@ def run_tests():
         assert_eq("GET / → 200", resp.status_code, 200)
 
         resp = client.get("/personal.html")
-        assert_eq("GET /personal.html → 404 (not yet)", resp.status_code, 404)
+        assert_eq("GET /personal.html → 200", resp.status_code, 200)  # 已实现
 
         resp = client.get("/admin.html")
         assert_eq("GET /admin.html → 404 (not yet)", resp.status_code, 404)

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN" x-data="personalApp()" :class="{ 'dark': dark }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 — 叮当猫的口袋</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="/js/auth.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+  <!-- 登录弹窗 -->
+  <div x-html="getLoginModalHTML()"></div>
+
+  <!-- 导航栏 -->
+  <nav class="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-lg font-bold text-indigo-600">
+        <span class="text-2xl">🐱</span> 叮当猫的口袋
+      </a>
+      <div class="flex items-center gap-3">
+        <button @click="dark = !dark" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <span x-show="!dark" class="text-lg">🌙</span>
+          <span x-show="dark" class="text-lg">☀️</span>
+        </button>
+        <div x-data x-html="getNavUserHTML()"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容 -->
+  <main class="pt-20 pb-16 max-w-4xl mx-auto px-4">
+
+    <!-- 未登录提示 -->
+    <div x-show="!AuthState.user && !loading" x-cloak class="text-center py-20">
+      <div class="text-6xl mb-4">🔒</div>
+      <h2 class="text-xl font-bold mb-2">请先登录</h2>
+      <p class="text-gray-500 mb-6">登录后查看个人中心</p>
+      <button @click="openLoginModal()" class="px-6 py-2.5 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition">
+        立即登录
+      </button>
+    </div>
+
+    <!-- 加载中 -->
+    <div x-show="loading" x-cloak class="text-center py-20">
+      <div class="animate-spin text-4xl mb-4">⏳</div>
+      <p class="text-gray-500">加载中...</p>
+    </div>
+
+    <!-- 已登录内容 -->
+    <div x-show="AuthState.user && !loading" x-cloak>
+
+      <!-- 用户信息卡片 -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-2xl font-bold"
+               x-text="profile.nickname ? profile.nickname.charAt(0).toUpperCase() : '?'"></div>
+          <div class="flex-1">
+            <h1 class="text-xl font-bold" x-text="profile.nickname"></h1>
+            <div class="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500">
+              <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full font-mono"
+                    x-text="'#' + String(profile.user_no).padStart(5, '0')"></span>
+              <span x-text="profile.auth_type === 'email' ? '📧 邮箱登录' : '🔶 Gitee 登录'"></span>
+              <span x-text="'注册于 ' + profile.created_at"></span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-3xl font-bold text-indigo-600" x-text="profile.usage_count"></div>
+            <div class="text-xs text-gray-400">总使用次数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 统计图表 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- 饼图：各工具使用占比 -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+          <h2 class="text-lg font-bold mb-4">📊 使用占比</h2>
+          <div id="chart-pie" class="w-full" style="height: 280px;"></div>
+          <div x-show="stats.tool_stats.length === 0" class="text-center text-gray-400 py-12">
+            暂无使用记录
+          </div>
+        </div>
+
+        <!-- 柱状图：近 7 天趋势 -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+          <h2 class="text-lg font-bold mb-4">📈 近 7 天使用趋势</h2>
+          <div id="chart-bar" class="w-full" style="height: 280px;"></div>
+          <div x-show="stats.daily_stats.length === 0" class="text-center text-gray-400 py-12">
+            暂无使用记录
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近使用记录 -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-bold mb-4">📋 最近使用</h2>
+
+        <div x-show="usageRecords.length === 0" class="text-center text-gray-400 py-8">
+          暂无使用记录
+        </div>
+
+        <div x-show="usageRecords.length > 0" class="divide-y divide-gray-100 dark:divide-gray-700">
+          <template x-for="record in usageRecords" :key="record.id">
+            <div class="py-3 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm"
+                      x-text="getToolEmoji(record.tool_name)"></span>
+                <div>
+                  <div class="text-sm font-medium" x-text="getToolLabel(record.tool_name)"></div>
+                  <div class="text-xs text-gray-400" x-text="record.action"></div>
+                </div>
+              </div>
+              <div class="text-xs text-gray-400" x-text="record.created_at"></div>
+            </div>
+          </template>
+        </div>
+
+        <!-- 分页 -->
+        <div x-show="usagePages > 1" class="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <button @click="loadUsage(usagePage - 1)" :disabled="usagePage <= 1"
+                  class="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-40">上一页</button>
+          <span class="px-3 py-1 text-sm text-gray-500" x-text="usagePage + ' / ' + usagePages"></span>
+          <button @click="loadUsage(usagePage + 1)" :disabled="usagePage >= usagePages"
+                  class="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-40">下一页</button>
+        </div>
+      </div>
+
+      <!-- 退出登录 -->
+      <div class="text-center mt-8">
+        <button @click="logout(); window.location.href='/'"
+                class="px-6 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition">
+          退出登录
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // 工具名 → 显示名 + emoji
+    const TOOL_META = {
+      "pdf_merge":        { label: "PDF 合并",     emoji: "📄" },
+      "pdf_split":        { label: "PDF 分割",     emoji: "✂️" },
+      "pdf_compress":     { label: "PDF 压缩",     emoji: "📦" },
+      "pdf_encrypt":      { label: "PDF 加密",     emoji: "🔐" },
+      "pdf_rotate":       { label: "PDF 旋转",     emoji: "🔄" },
+      "pdf_delete_pages": { label: "PDF 删除页",   emoji: "🗑️" },
+      "pdf_page_numbers": { label: "PDF 加页码",   emoji: "🔢" },
+      "pdf_to_image":     { label: "PDF 转图片",   emoji: "🖼️" },
+      "image_to_pdf":     { label: "图片转 PDF",   emoji: "📸" },
+      "pdf_to_word":      { label: "PDF 转 Word",  emoji: "📝" },
+      "office_to_pdf":    { label: "Office 转 PDF", emoji: "📎" },
+    };
+
+    function getToolLabel(name) { return TOOL_META[name]?.label || name; }
+    function getToolEmoji(name) { return TOOL_META[name]?.emoji || "🔧"; }
+
+    function personalApp() {
+      return {
+        dark: localStorage.getItem("dark") === "true",
+        loading: true,
+        profile: {},
+        stats: { tool_stats: [], daily_stats: [], total: 0 },
+        usageRecords: [],
+        usagePage: 1,
+        usagePages: 1,
+
+        async init() {
+          this.$watch("dark", v => localStorage.setItem("dark", v));
+          // 等待 auth 状态加载
+          await checkAuthStatus();
+          if (!AuthState.user) {
+            this.loading = false;
+            return;
+          }
+          await this.loadAll();
+          this.loading = false;
+        },
+
+        async loadAll() {
+          await Promise.all([
+            this.loadProfile(),
+            this.loadStats(),
+            this.loadUsage(1),
+          ]);
+        },
+
+        async loadProfile() {
+          try {
+            const res = await fetch("/api/user/profile");
+            if (res.ok) this.profile = await res.json();
+          } catch {}
+        },
+
+        async loadStats() {
+          try {
+            const res = await fetch("/api/user/stats?days=7");
+            if (res.ok) {
+              this.stats = await res.json();
+              this.$nextTick(() => this.renderCharts());
+            }
+          } catch {}
+        },
+
+        async loadUsage(page) {
+          try {
+            const res = await fetch(`/api/user/usage?page=${page}&per_page=15`);
+            if (res.ok) {
+              const data = await res.json();
+              this.usageRecords = data.records;
+              this.usagePage = data.page;
+              this.usagePages = data.pages;
+            }
+          } catch {}
+        },
+
+        renderCharts() {
+          this.renderPieChart();
+          this.renderBarChart();
+        },
+
+        renderPieChart() {
+          const el = document.getElementById("chart-pie");
+          if (!el || this.stats.tool_stats.length === 0) return;
+
+          const chart = echarts.init(el);
+          chart.setOption({
+            tooltip: { trigger: "item", formatter: "{b}: {c} 次 ({d}%)" },
+            color: ["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd", "#818cf8", "#6d28d9", "#4f46e5", "#7c3aed", "#5b21b6", "#4338ca", "#3730a3"],
+            series: [{
+              type: "pie",
+              radius: ["40%", "70%"],
+              center: ["50%", "55%"],
+              avoidLabelOverlap: true,
+              itemStyle: { borderRadius: 8, borderColor: "#fff", borderWidth: 2 },
+              label: { show: true, fontSize: 12 },
+              data: this.stats.tool_stats,
+            }],
+          });
+          window.addEventListener("resize", () => chart.resize());
+        },
+
+        renderBarChart() {
+          const el = document.getElementById("chart-bar");
+          if (!el || this.stats.daily_stats.length === 0) return;
+
+          const chart = echarts.init(el);
+          const dates = this.stats.daily_stats.map(d => d.date);
+          const counts = this.stats.daily_stats.map(d => d.count);
+
+          chart.setOption({
+            tooltip: { trigger: "axis" },
+            grid: { left: "10%", right: "5%", top: "10%", bottom: "15%" },
+            xAxis: { type: "category", data: dates, axisLabel: { fontSize: 11 } },
+            yAxis: { type: "value", minInterval: 1, axisLabel: { fontSize: 11 } },
+            series: [{
+              type: "bar",
+              data: counts,
+              barWidth: "50%",
+              itemStyle: {
+                borderRadius: [6, 6, 0, 0],
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                  { offset: 0, color: "#6366f1" },
+                  { offset: 1, color: "#a78bfa" },
+                ]),
+              },
+            }],
+          });
+          window.addEventListener("resize", () => chart.resize());
+        },
+      };
+    }
+  </script>
+
+</body>
+</html>
