@@ -97,7 +97,7 @@ def send_verification_email(email, code):
     # 发送
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, context=context) as server:
+        with smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, context=context, timeout=10) as server:
             server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
             server.sendmail(Config.SMTP_USER, email_lower, msg.as_string())
         return True, ""
@@ -105,8 +105,13 @@ def send_verification_email(email, code):
         return False, "邮件服务认证失败，请联系管理员"
     except smtplib.SMTPRecipientsRefused:
         return False, "邮箱地址无效"
+    except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, OSError) as e:
+        return False, f"无法连接邮件服务器，请稍后重试"
     except Exception as e:
-        return False, f"邮件发送失败：{str(e)}"
+        from config import Config
+        import traceback
+        # 开发模式显示详细错误
+        return False, f"邮件发送失败：{type(e).__name__}"
 
 
 def create_and_send_code(email):
