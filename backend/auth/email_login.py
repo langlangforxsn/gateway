@@ -92,7 +92,7 @@ def send_verification_email(email, code):
             resp = requests.post(
                 "https://api.resend.com/emails",
                 json={
-                    "from": f"叮当猫的口袋 <noreply@resend.dev>",
+                    "from": "onboarding@resend.dev",
                     "to": [email_lower],
                     "subject": subject,
                     "html": html,
