@@ -297,7 +297,7 @@
   <!-- ============================================================ -->
   <!--  打赏                                                          -->
   <!-- ============================================================ -->
-  <section x-data="{ showDonate: false }" class="border-t border-gray-100 dark:border-gray-700">
+  <section class="border-t border-gray-100 dark:border-gray-700">
     <div class="max-w-6xl mx-auto px-4 py-8 text-center">
       <div x-show="showDonate" x-cloak class="fixed inset-0 z-50 flex items-center justify-center"
            @keydown.escape.window="showDonate = false">
@@ -349,6 +349,9 @@
         recentUsers: [],
         showWelcome: false,
         welcomeNickname: '',
+        welcomeNo: 0,
+        // 打赏
+        showDonate: false,
         welcomeNo: 0,
 
         init() {
