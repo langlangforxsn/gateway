@@ -272,6 +272,16 @@
           if (!this.user?.is_admin) { this.loading = false; return; }
           await Promise.all([this.loadOverview(), this.loadTrend(), this.loadUsers(1), this.loadLimits(), this.loadGlobalUsage(1)]);
           this.loading = false;
+          // 等 DOM 渲染完成后再画图
+          await this.$nextTick();
+          this.renderTrendCharts();
+        },
+
+        renderTrendCharts() {
+          const trend = this._trendData;
+          if (!trend) return;
+          this.renderLineChart("chart-register", trend.dates, trend.register_data, "注册数", "#10b981");
+          this.renderBarChart2("chart-usage-trend", trend.dates, trend.usage_data, "使用次数");
         },
 
         openLoginModal() { this.error=''; this.email=''; this.code=''; this.codeSent=false; this.countdown=0; this.showModal=true; },
@@ -297,10 +307,8 @@
           const res = await fetch("/api/admin/stats/trend?days=30");
           if (!res.ok) return;
           const d = await res.json();
-          // 等待 DOM 渲染完成后初始化图表
-          await this.$nextTick();
-          this.renderLineChart("chart-register", d.dates, d.register_data, "注册数", "#10b981");
-          this.renderBarChart2("chart-usage-trend", d.dates, d.usage_data, "使用次数");
+          // 存储数据，在 DOM 渲染完成后由 renderTrendCharts() 画图
+          this._trendData = d;
         },
 
         async loadUsers(page) {

@@ -259,6 +259,9 @@
           if (!this.user) { this.loading = false; return; }
           await this.loadAll();
           this.loading = false;
+          // 图表容器在 x-show="user && !loading" 中，必须等 loading=false 且 DOM 渲染后才能画图
+          await this.$nextTick();
+          this.renderCharts();
         },
 
         openLoginModal() { this.error=''; this.email=''; this.code=''; this.codeSent=false; this.countdown=0; this.showModal=true; },
@@ -296,8 +299,6 @@
             const res = await fetch("/api/user/stats?days=7", {credentials:"same-origin"});
             if (res.ok) {
               this.stats = await res.json();
-              await this.$nextTick();
-              this.renderCharts();
             }
           } catch {}
         },
