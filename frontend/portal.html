@@ -290,6 +290,33 @@
   </section>
 
   <!-- ============================================================ -->
+  <!--  打赏                                                          -->
+  <!-- ============================================================ -->
+  <section x-data="{ showDonate: false }" class="border-t border-gray-100 dark:border-gray-700">
+    <div class="max-w-6xl mx-auto px-4 py-8 text-center">
+      <div x-show="showDonate" x-cloak class="fixed inset-0 z-50 flex items-center justify-center"
+           @keydown.escape.window="showDonate = false">
+        <div class="absolute inset-0 bg-black/50" @click="showDonate = false"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8 text-center"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+          <button @click="showDonate = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+          <div class="text-4xl mb-3">☕</div>
+          <h3 class="text-lg font-bold mb-2">请作者喝杯咖啡</h3>
+          <p class="text-sm text-gray-500 mb-6">扫码支持我们，让叮当猫的口袋持续更新</p>
+          <img src="/img/afdian-qr.png" alt="爱发电二维码" class="w-48 h-48 mx-auto rounded-xl mb-6">
+          <p class="text-xs text-gray-400">微信 / 支付宝扫码</p>
+        </div>
+      </div>
+      <button @click="showDonate = true"
+              class="inline-flex items-center gap-2 px-5 py-2 border border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition">
+        <span class="text-lg">☕</span> 请作者喝杯咖啡
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
   <!--  Footer                                                        -->
   <!-- ============================================================ -->
   <footer class="text-center py-8 text-sm text-gray-400">
