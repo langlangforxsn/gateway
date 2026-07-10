@@ -109,6 +109,11 @@
           <span x-show="!dark" class="text-lg">🌙</span>
           <span x-show="dark" class="text-lg">☀️</span>
         </button>
+        <!-- 打赏 -->
+        <button @click="showDonate = true"
+                class="px-3 py-1.5 border border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition hidden sm:inline-flex items-center gap-1">
+          <span>☕</span> <span>打赏</span>
+        </button>
         <!-- 未登录 -->
         <template x-if="!user">
           <button @click="openLoginModal()" class="px-4 py-2 bg-indigo-500 text-white text-sm rounded-lg hover:bg-indigo-600 font-medium">登录</button>
