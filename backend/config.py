@@ -56,8 +56,8 @@ class Config:
 
     # ---- Session ----
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SECURE = os.environ.get("RENDER", "") != ""  # Render 部署时自动启用 HTTPS
+    SESSION_COOKIE_SAMESITE = "None"  # 允许跨站请求携带 Cookie
+    SESSION_COOKIE_SECURE = os.environ.get("RENDER", "") != ""  # Render HTTPS 时启用
     PERMANENT_SESSION_LIFETIME = 86400 * 7  # 7 天
 
     # ---- 各工具默认限制配置（首次启动时写入 limit_configs 表） ----

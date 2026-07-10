@@ -39,7 +39,12 @@ def create_app():
         static_url_path="",
     )
     app.config.from_object(Config)
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, origins=[
+        "https://pdf-tool-api.onrender.com",
+        "https://image-converterforxsn.onrender.com",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+    ])
 
     # ---- 初始化数据库 ----
     init_db(app)

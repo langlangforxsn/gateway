@@ -115,9 +115,10 @@ def recent_users():
 
 @bp.route("/status", methods=["GET"])
 def status():
-    """检查当前登录状态。"""
+    """检查当前登录状态（支持 CORS 跨站请求）。"""
+    resp = jsonify({"logged_in": False})
     if current_user.is_authenticated:
-        return jsonify({
+        resp = jsonify({
             "logged_in": True,
             "user": {
                 "id": current_user.id,
@@ -129,7 +130,10 @@ def status():
                 "auth_type": current_user.auth_type,
             }
         })
-    return jsonify({"logged_in": False})
+    # 允许跨站携带 Cookie
+    resp.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    resp.headers["Access-Control-Allow-Credentials"] = "true"
+    return resp
 
 
 @bp.route("/gitee", methods=["GET"])
