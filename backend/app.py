@@ -70,11 +70,13 @@ def create_app():
         from user import bp as user_bp
         from admin import bp as admin_bp
         from proxy import bp as proxy_bp
+        from qr_tool import bp as tools_bp
 
         app.register_blueprint(auth_bp)
         app.register_blueprint(user_bp)
         app.register_blueprint(admin_bp)
         app.register_blueprint(proxy_bp)
+        app.register_blueprint(tools_bp)
         logger.info("所有蓝图注册成功")
     except Exception as e:
         logger.error(f"蓝图注册失败: {e}")
@@ -88,6 +90,10 @@ def create_app():
     @app.route("/personal.html")
     def serve_personal():
         return send_from_directory(app.static_folder, "personal.html")
+
+    @app.route("/qr.html")
+    def serve_qr():
+        return send_from_directory(app.static_folder, "qr.html")
 
     @app.route("/admin.html")
     def serve_admin():

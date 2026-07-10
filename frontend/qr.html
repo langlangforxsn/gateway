@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN" x-data="qrApp()" :class="{ 'dark': dark }">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码生成器 — 叮当猫的口袋</title>
+  <script src="/js/tailwind.js"></script>
+  <script defer src="/js/alpine.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>[x-cloak]{display:none!important}</style>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+  <!-- 导航栏 -->
+  <nav class="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-lg font-bold text-indigo-600"><span class="text-2xl">🐱</span> 叮当猫的口袋</a>
+      <a href="/" class="text-sm text-gray-500 hover:text-indigo-600">← 返回首页</a>
+    </div>
+  </nav>
+
+  <!-- 主内容 -->
+  <main class="pt-20 pb-16 max-w-2xl mx-auto px-4">
+
+    <!-- 输入区 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border p-6 mb-6">
+      <h1 class="text-xl font-bold mb-4">📱 二维码生成器</h1>
+      <p class="text-sm text-gray-500 mb-4">输入文字或网址，生成二维码图片，手机扫码即可读取</p>
+
+      <!-- 内容输入 -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容</label>
+        <textarea x-model="content" rows="3" placeholder="输入网址、文字，或粘贴链接..."
+                  class="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+        <div class="text-xs text-gray-400 mt-1" x-text="content.length + ' / 2000'"></div>
+      </div>
+
+      <!-- 颜色选择 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">前景色</label>
+          <input type="color" x-model="fillColor" class="w-full h-10 rounded-lg border cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">背景色</label>
+          <input type="color" x-model="backColor" class="w-full h-10 rounded-lg border cursor-pointer">
+        </div>
+      </div>
+
+      <!-- 生成按钮 -->
+      <button @click="generate()" :disabled="generating || !content"
+              class="w-full py-3 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 disabled:opacity-50 transition">
+        <span x-show="!generating">生成二维码</span>
+        <span x-show="generating">生成中...</span>
+      </button>
+
+      <!-- 错误提示 -->
+      <div x-show="error" class="mt-3 p-3 bg-red-50 text-red-600 text-sm rounded-lg" x-text="error"></div>
+    </div>
+
+    <!-- 结果区 -->
+    <div x-show="qrImage" x-cloak class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border p-6 text-center">
+      <h2 class="text-lg font-bold mb-4">✅ 二维码已生成</h2>
+      <div class="inline-block p-4 bg-white rounded-xl shadow-inner mb-4">
+        <img :src="qrImage" alt="QR Code" class="max-w-[280px] max-h-[280px]">
+      </div>
+      <div class="flex gap-3 justify-center">
+        <a :href="qrImage" download="qrcode.png"
+           class="px-6 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition text-sm">
+          📥 下载 PNG
+        </a>
+        <button @click="copyImage()"
+                class="px-6 py-2 border rounded-lg text-sm hover:bg-gray-50 transition">
+          📋 复制图片
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mt-3">扫一扫即可读取内容</p>
+    </div>
+
+  </main>
+
+  <script>
+    function qrApp() {
+      return {
+        dark: localStorage.getItem("dark") === "true",
+        content: "",
+        fillColor: "#000000",
+        backColor: "#FFFFFF",
+        qrImage: "",
+        generating: false,
+        error: "",
+        init() {
+          this.$watch("dark", v => localStorage.setItem("dark", v));
+        },
+        async generate() {
+          this.error = "";
+          this.qrImage = "";
+          if (!this.content.trim()) { this.error = "请输入内容"; return; }
+          this.generating = true;
+          try {
+            const res = await fetch("/api/tools/qr", {
+              method: "POST",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({
+                content: this.content.trim(),
+                fill_color: this.fillColor,
+                back_color: this.backColor,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            this.qrImage = data.image;
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.generating = false;
+          }
+        },
+        async copyImage() {
+          try {
+            const blob = await (await fetch(this.qrImage)).blob();
+            await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+            this.error = "";
+            alert("已复制到剪贴板");
+          } catch {
+            alert("复制失败，请用下载按钮保存");
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>
