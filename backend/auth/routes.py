@@ -54,7 +54,7 @@ def email_verify():
         return jsonify({"error": "请输入 6 位数字验证码"}), 400
 
     from auth.email_login import verify_code
-    success, message, user = verify_code(email, code)
+    success, message, user, is_new = verify_code(email, code)
 
     if not success:
         return jsonify({"error": message}), 400
@@ -64,6 +64,7 @@ def email_verify():
 
     return jsonify({
         "message": message,
+        "is_new_user": is_new,
         "user": {
             "id": user.id,
             "user_no": user.user_no,
@@ -74,6 +75,42 @@ def email_verify():
             "auth_type": user.auth_type,
         },
     })
+
+
+@bp.route("/recent-users", methods=["GET"])
+def recent_users():
+    """获取最近注册的用户（用于首页滚动通知）。"""
+    from auth.models import User
+    from datetime import datetime, timedelta
+
+    users = (
+        User.query
+        .order_by(User.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    now = datetime.utcnow()
+    result = []
+    for u in users:
+        # 计算相对时间
+        delta = now - u.created_at
+        if delta < timedelta(minutes=1):
+            time_str = "刚刚"
+        elif delta < timedelta(hours=1):
+            time_str = f"{int(delta.total_seconds() // 60)} 分钟前"
+        elif delta < timedelta(days=1):
+            time_str = f"{int(delta.total_seconds() // 3600)} 小时前"
+        else:
+            time_str = f"{delta.days} 天前"
+
+        result.append({
+            "nickname": u.nickname,
+            "user_no": u.user_no,
+            "time_ago": time_str,
+        })
+
+    return jsonify({"users": result})
 
 
 @bp.route("/status", methods=["GET"])

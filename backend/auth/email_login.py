@@ -190,16 +190,18 @@ def verify_code(email, code):
 
     # 查找或创建用户
     user = User.query.filter_by(auth_type="email", auth_id=email_lower).first()
+    is_new = False
 
     if not user:
         # 首次登录，自动注册
         user = _create_user(email_lower)
+        is_new = True
     else:
         # 更新最后登录时间
         user.last_login = datetime.utcnow()
 
     db.session.commit()
-    return True, "登录成功", user
+    return True, "登录成功", user, is_new
 
 
 def _create_user(email):
