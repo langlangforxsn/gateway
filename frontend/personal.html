@@ -296,7 +296,8 @@
             const res = await fetch("/api/user/stats?days=7", {credentials:"same-origin"});
             if (res.ok) {
               this.stats = await res.json();
-              this.$nextTick(() => this.renderCharts());
+              await this.$nextTick();
+              this.renderCharts();
             }
           } catch {}
         },
@@ -321,7 +322,7 @@
         renderPieChart() {
           const el = document.getElementById("chart-pie");
           if (!el || this.stats.tool_stats.length === 0) return;
-
+          if (echarts.getInstanceByDom(el)) echarts.getInstanceByDom(el).dispose();
           const chart = echarts.init(el);
           chart.setOption({
             tooltip: { trigger: "item", formatter: "{b}: {c} 次 ({d}%)" },
@@ -342,7 +343,7 @@
         renderBarChart() {
           const el = document.getElementById("chart-bar");
           if (!el || this.stats.daily_stats.length === 0) return;
-
+          if (echarts.getInstanceByDom(el)) echarts.getInstanceByDom(el).dispose();
           const chart = echarts.init(el);
           const dates = this.stats.daily_stats.map(d => d.date);
           const counts = this.stats.daily_stats.map(d => d.count);

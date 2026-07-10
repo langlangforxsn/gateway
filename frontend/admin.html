@@ -297,10 +297,10 @@
           const res = await fetch("/api/admin/stats/trend?days=30");
           if (!res.ok) return;
           const d = await res.json();
-          this.$nextTick(() => {
-            this.renderLineChart("chart-register", d.dates, d.register_data, "注册数", "#10b981");
-            this.renderBarChart2("chart-usage-trend", d.dates, d.usage_data, "使用次数");
-          });
+          // 等待 DOM 渲染完成后初始化图表
+          await this.$nextTick();
+          this.renderLineChart("chart-register", d.dates, d.register_data, "注册数", "#10b981");
+          this.renderBarChart2("chart-usage-trend", d.dates, d.usage_data, "使用次数");
         },
 
         async loadUsers(page) {
@@ -331,6 +331,8 @@
 
         renderLineChart(elId, dates, data, name, color) {
           const el = document.getElementById(elId); if (!el) return;
+          // 销毁旧实例避免重复渲染
+          if (echarts.getInstanceByDom(el)) echarts.getInstanceByDom(el).dispose();
           const chart = echarts.init(el);
           chart.setOption({ tooltip:{trigger:"axis"}, grid:{left:"12%",right:"5%",top:"10%",bottom:"15%"}, xAxis:{type:"category",data:dates,axisLabel:{fontSize:10,rotate:45}}, yAxis:{type:"value",minInterval:1}, series:[{name,type:"line",data,smooth:true,symbol:"circle",symbolSize:6,lineStyle:{color,width:2},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:color+"33"},{offset:1,color:color+"05"}])},itemStyle:{color}}] });
           window.addEventListener("resize",()=>chart.resize());
